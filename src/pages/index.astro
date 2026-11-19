@@ -1,0 +1,41 @@
+---
+import { getLocaleFromAstro, getTranslations } from '../i18n';
+const locale = getLocaleFromAstro(Astro);
+const t = getTranslations(locale);
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroSection from '../components/HeroSection.astro';
+import FeaturesSection from '../components/FeaturesSection.astro';
+import WhySetupSection from '../components/WhySetupSection.astro';
+import ProductsSection from '../components/ProductsSection.astro';
+import WorkflowSection from '../components/WorkflowSection.astro';
+import ExploreSection from '../components/ExploreSection.astro';
+import ContentSections from '../components/ContentSections.astro';
+import { resolvePageSeo } from '../config/seo';
+import { faqPageSchema, organizationSchema, websiteSchema } from '../utils/schema';
+import SiteFaqSection from '../components/SiteFaqSection.astro';
+import { getLandingFaqs } from '../data/faq-locale';
+import { getHomeOgImage } from '../data/site-images';
+
+const seo = resolvePageSeo('/');
+const homeFaqs = getLandingFaqs(locale);
+const homeOg = getHomeOgImage();
+---
+
+<BaseLayout
+  title={seo.title}
+  description={seo.description}
+  ogImage={homeOg.src}
+  ogImageAlt={homeOg.alt}
+  ogImageWidth={homeOg.width}
+  ogImageHeight={homeOg.height}
+  jsonLd={[websiteSchema(), organizationSchema(), faqPageSchema(homeFaqs.map((f, i) => ({ num: String(i + 1).padStart(2, '0'), q: f.q, a: f.a.replace(/<[^>]+>/g, '') })))]}
+>
+  <HeroSection />
+  <FeaturesSection />
+  <ProductsSection />
+  <WhySetupSection />
+  <WorkflowSection />
+  <ContentSections />
+  <ExploreSection />
+  <SiteFaqSection id="faq" titleId="faq-title" items={homeFaqs} />
+</BaseLayout>

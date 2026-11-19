@@ -1,0 +1,143 @@
+---
+import {
+  formatLastUpdatedLine,
+  formatStatusPillLabel,
+  STATUS_TONE,
+} from '../data/status';
+import { getLocaleFromAstro } from '../i18n';
+import { ROUTES, getLocalizedPath } from '../utils/path';
+
+interface Props {
+  class?: string;
+  showLastUpdated?: boolean;
+  link?: boolean;
+  /** Larger pill for /status/ header only. */
+  size?: 'default' | 'lg';
+}
+
+const locale = getLocaleFromAstro(Astro);
+const { class: className, showLastUpdated = true, link = true, size = 'default' } = Astro.props;
+const href = getLocalizedPath(ROUTES.status, locale);
+const label = formatStatusPillLabel();
+const lastUpdated = formatLastUpdatedLine();
+const pillClass = ['status-updated-pill', `status-updated-pill--${STATUS_TONE}`];
+---
+
+<div class:list={['status-updated-wrap', size === 'lg' && 'status-updated-wrap--lg', className]}>
+  {
+    link ? (
+      <a href={href} class:list={pillClass}>
+        <span class="status-updated-pill__dot" aria-hidden="true" />
+        <span>{label}</span>
+      </a>
+    ) : (
+      <span class:list={pillClass} role="status">
+        <span class="status-updated-pill__dot" aria-hidden="true" />
+        <span>{label}</span>
+      </span>
+    )
+  }
+  {showLastUpdated && <span class="status-updated-meta">{lastUpdated}</span>}
+</div>
+
+<style>
+  .status-updated-wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.65rem;
+    max-width: 100%;
+  }
+
+  .status-updated-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  a.status-updated-pill {
+    color: inherit;
+  }
+
+  a.status-updated-pill:hover {
+    border-color: color-mix(in srgb, var(--status-pill-accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--status-pill-accent) 22%, transparent);
+  }
+
+  .status-updated-pill--green {
+    --status-pill-accent: #22c55e;
+    border: 1px solid color-mix(in srgb, #22c55e 45%, transparent);
+    background: rgb(34 197 94 / 15%);
+    color: var(--foreground);
+  }
+
+  .status-updated-pill--blue {
+    --status-pill-accent: #3b82f6;
+    border: 1px solid color-mix(in srgb, #3b82f6 45%, transparent);
+    background: rgb(59 130 246 / 15%);
+    color: var(--foreground);
+  }
+
+  .status-updated-pill--red {
+    --status-pill-accent: #ef4444;
+    border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+    background: rgb(239 68 68 / 15%);
+    color: var(--foreground);
+  }
+
+  .status-updated-pill__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--status-pill-accent);
+    animation: status-pill-dot-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes status-pill-dot-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.65;
+      transform: scale(0.92);
+    }
+  }
+
+  .status-updated-meta {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--muted-foreground);
+  }
+
+  @media (min-width: 640px) {
+    .status-updated-meta {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .status-updated-wrap--lg .status-updated-pill {
+    gap: 0.5rem;
+    padding: 0.48rem 1.15rem;
+    font-size: 1rem;
+  }
+
+  .status-updated-wrap--lg .status-updated-pill__dot {
+    width: 0.5625rem;
+    height: 0.5625rem;
+  }
+
+  .status-updated-wrap--lg .status-updated-meta {
+    font-size: 0.875rem;
+  }
+</style>

@@ -1,0 +1,249 @@
+---
+import SlideRevealButton from "../../components/SlideRevealButton.astro";
+import { getLocaleFromAstro, getTranslations } from '../../i18n';
+const locale = getLocaleFromAstro(Astro);
+const t = getTranslations(locale);
+import '../../styles/blog-pages.css';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllBlogSlugs, getBlogPost, getRelatedBlogPosts } from '../../data/blog';
+import {
+  articleSchema,
+  breadcrumbSchema,
+  faqPageSchema,
+  parseBlogDate,
+} from '../../utils/schema';
+import { CHECKOUT_LINK_REL, checkoutPath, resolveCheckoutHref } from '../../config/checkout';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import BlogSidebar from '../../components/BlogSidebar.astro';
+import BlogPostTopBar from '../../components/BlogPostTopBar.astro';
+import { getBlogFaqs, type SiteFaqItem } from '../../data/faq';
+import SiteFaqSection from '../../components/SiteFaqSection.astro';
+import Icon from '../../components/icons/Icon.astro';
+import type { BlogBlock } from '../../data/blog';
+import { Badge } from '@/components/starwind/badge';
+import { Button } from '@/components/starwind/button';
+import { Prose } from '@/components/starwind/prose';
+import BlogPostCta from '../../components/BlogPostCta.astro';
+import { normalizeInternalPath, ROUTES } from '../../utils/path';
+import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_HEIGHT, DEFAULT_OG_IMAGE_WIDTH } from '../../config/seo';
+import ResponsiveImage from '../../components/ResponsiveImage.astro';
+
+export function getStaticPaths() {
+  return getAllBlogSlugs().map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const post = getBlogPost(slug!);
+
+if (!post) {
+  return Astro.redirect('/blog/');
+}
+
+const postPath = `/blog/${post.slug}/`;
+const breadcrumbs = [
+  { name: 'Home', path: '/' },
+  { name: 'Blog', path: '/blog/' },
+  { name: post.title, path: postPath },
+];
+
+const related = getRelatedBlogPosts(post.slug, 3);
+
+function linkify(text: string): string {
+  const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+  const format = (value: string) => escape(value).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  let end = 0;
+  let html = '';
+  for (const match of text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
+    html += format(text.slice(end, match.index));
+    const [, label, href] = match;
+    const target = /^(?:\/(?!\/)|https?:\/\/|#)/i.test(href) ? normalizeInternalPath(href) : '#';
+    html += `<a href="${escape(target)}">${format(label)}</a>`;
+    end = match.index + match[0].length;
+  }
+  return html + format(text.slice(end));
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+const published = parseBlogDate(post.date);
+const faqIcons = ['faqBlogDefault1', 'faqBlogDefault2', 'faqBlogDefault3'] as const;
+const blogFaqs: SiteFaqItem[] = post.faqs?.length
+  ? post.faqs.slice(0, 3).map((item, i) => ({
+      id: `${post.slug}-faq-${i + 1}`,
+      topic: 'blog',
+      icon: faqIcons[i] ?? 'faqBlogDefault1',
+      q: item.q,
+      a: item.a,
+    }))
+  : getBlogFaqs(post.tag, post.slug);
+---
+
+<BaseLayout
+  title={post.seoTitle ?? post.title}
+  description={post.metaDescription ?? post.desc}
+  ogType="article"
+  ogImage={post.image ?? DEFAULT_OG_IMAGE}
+  ogImageAlt={post.imageAlt ?? post.title}
+  ogImageWidth={post.imageWidth ?? DEFAULT_OG_IMAGE_WIDTH}
+  ogImageHeight={post.imageHeight ?? DEFAULT_OG_IMAGE_HEIGHT}
+  articlePublishedTime={published}
+  articleModifiedTime={published}
+  jsonLd={[
+    articleSchema({
+      name: post.title,
+      description: post.metaDescription ?? post.desc,
+      url: postPath,
+      image: DEFAULT_OG_IMAGE,
+      datePublished: published,
+      dateModified: published,
+    }),
+    breadcrumbSchema(breadcrumbs),
+    faqPageSchema(
+      blogFaqs.map((item, i) => ({
+        num: String(i + 1).padStart(2, '0'),
+        q: item.q,
+        a: item.a.replace(/<[^>]+>/g, ''),
+      })),
+    ),
+  ]}
+>
+  <article class="py-8 md:py-12">
+    <div class="mx-auto max-w-6xl px-5">
+      <Breadcrumbs items={breadcrumbs} />
+
+      <BlogPostTopBar post={post} class="mt-6" />
+
+      <div class="blog-article__layout mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(11.5rem,13.5rem)] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_13.5rem]">
+        <div id="blog-article-start" class="min-w-0">
+
+          <div data-blog-reading-article>
+          <header class="blog-article__header">
+            <h1 class="blog-article__title">{post.title}</h1>
+            {
+              post.image && (
+                <figure class="blog-article__hero-figure mt-6 overflow-hidden rounded-xl border border-border bg-muted/20">
+                  <ResponsiveImage
+                    src={post.image}
+                    alt={post.imageAlt ?? post.title}
+                    width={post.imageWidth ?? 1330}
+                    height={post.imageHeight ?? 840}
+                    sizes="(min-width: 1024px) 720px, 100vw"
+                    loading="eager"
+                    fetchPriority="high"
+                    class="blog-article__hero-img h-auto w-full object-cover"
+                  />
+                </figure>
+              )
+            }
+            <p class="blog-article__lead">{post.desc}</p>
+            {
+              post.author && (
+                <p class="blog-article__byline">
+                  <Icon name="users" size={14} />
+                  {post.author}
+                </p>
+              )
+            }
+          </header>
+
+          <Prose class="blog-article__prose prose-headings:scroll-mt-24 max-w-none text-left">
+            {post.body.map((block: BlogBlock) => {
+              if (block.type === 'faq') {
+                return (
+                  <div class="my-5">
+                    <p class="font-semibold" set:html={linkify(block.question)} />
+                    <p set:html={linkify(block.answer)} />
+                  </div>
+                );
+              }
+              if (block.type === 'h2') {
+                const id = slugify(block.text);
+                return <h2 id={id}>{block.text}</h2>;
+              }
+              if (block.type === 'h3') {
+                const id = slugify(block.text);
+                return <h3 id={id}>{block.text}</h3>;
+              }
+              if (block.type === 'ul' || block.type === 'ol') {
+                const List = block.type;
+                return (
+                  <List>
+                    {block.items.map((item, index) => (
+                      <li>
+                        <Fragment set:html={linkify(item)} />
+                        {block.nestedItems?.[index] && (
+                          <ul>
+                            {block.nestedItems[index].map((nested) => <li set:html={linkify(nested)} />)}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </List>
+                );
+              }
+              if (block.type === 'table') {
+                return (
+                  <div class="overflow-x-auto">
+                    <table>
+                      <thead>
+                        <tr>
+                          {block.headers.map((header) => (
+                            <th>{header}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {block.rows.map((row) => (
+                          <tr>
+                            {row.map((cell) => (
+                              <td set:html={linkify(cell)} />
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              }
+              if (block.type === 'cta') {
+                return (
+                  <BlogPostCta
+                    title={block.title}
+                    html={linkify(block.text)}
+                    href={resolveCheckoutHref(block.href)}
+                  />
+                );
+              }
+              return <p set:html={linkify(block.text)} />;
+            })}
+          </Prose>
+          </div>
+
+          <nav class="blog-article__actions" aria-label="Continue reading">
+            <SlideRevealButton href={checkoutPath('tekkenHack')} aria-label={t.ui.checkoutAria} rel={CHECKOUT_LINK_REL} data-astro-reload data-astro-prefetch="false">
+              Buy Tekken 8 Hacks
+            </SlideRevealButton>
+            <Button as="a" href={ROUTES.products} variant="outline">
+              View products
+            </Button>
+            <Button as="a" href={ROUTES.blog} variant="outline">
+              More articles
+              <Icon name="arrowRight" size={17} />
+            </Button>
+          </nav>
+        </div>
+        <BlogSidebar post={post} related={related} class="min-w-0" />
+      </div>
+    </div>
+  </article>
+
+  <SiteFaqSection
+    items={blogFaqs}
+    titleId={`blog-faq-${post.slug}`}
+    class="border-t border-border bg-muted/20"
+  />
+</BaseLayout>

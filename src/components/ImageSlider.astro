@@ -1,0 +1,243 @@
+---
+import ResponsiveImage from './ResponsiveImage.astro';
+import { HERO_IMAGE_SIZES, HERO_IMAGE_WIDTHS, intrinsicImageSize } from '../utils/responsiveImage';
+import CarouselShell from './CarouselShell.astro';
+import {
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/starwind/carousel';
+
+interface Slide {
+  src: string;
+  alt: string;
+  caption: string;
+  captionDesc: string;
+  width?: number;
+  height?: number;
+  objectFit?: 'contain' | 'cover';
+}
+
+interface Props {
+  images: Slide[];
+  id: string;
+  variant?: 'default' | 'hero';
+  desktopOnly?: boolean;
+  /** Optional clickable thumbnail strip (off by default; hero uses dot pill). */
+  heroThumbnails?: boolean;
+  /** Disable hero autoplay (manual navigation only). */
+  noAutoplay?: boolean;
+}
+
+const {
+  images,
+  id,
+  variant = 'default',
+  desktopOnly = false,
+  heroThumbnails = false,
+  noAutoplay = false,
+} = Astro.props;
+const isHero = variant === 'hero';
+const imageSizes = isHero ? HERO_IMAGE_SIZES : '(min-width: 1024px) 640px, 100vw';
+const imageWidths = isHero ? HERO_IMAGE_WIDTHS : undefined;
+---
+
+<div
+  class:list={[
+    'relative w-full',
+    'rounded-xl border border-border bg-card p-2 shadow-sm',
+    desktopOnly && 'hidden lg:block',
+  ]}
+  id={id}
+  style={images[0]?.width && images[0]?.height ? `--hero-native-aspect: ${images[0].width} / ${images[0].height}` : undefined}
+  data-hero-embla-wrap={isHero || undefined}
+  data-hero-no-autoplay={isHero && noAutoplay ? 'true' : undefined}
+>
+  <CarouselShell
+    autoInit={!isHero}
+    dataHeroEmbla={isHero}
+    opts={{ loop: images.length > 1, align: 'start' }}
+    class="w-full"
+  >
+    <CarouselContent data-hero-embla-viewport={isHero || undefined}>
+      {images.map((img, i) => {
+        const { width: imgWidth, height: imgHeight } =
+          img.width && img.height ? { width: img.width, height: img.height } : intrinsicImageSize(img.src);
+        const fit = img.objectFit ?? 'cover';
+        const heroFigureStyle =
+          isHero && imgWidth && imgHeight
+            ? `aspect-ratio: ${imgWidth} / ${imgHeight}`
+            : undefined;
+        return (
+        <CarouselItem class="basis-full">
+          <figure
+            class:list={[
+              isHero
+                ? 'hero-embla-slide-figure overflow-hidden rounded-lg bg-muted/30'
+                : 'overflow-hidden rounded-lg',
+            ]}
+            style={heroFigureStyle}
+          >
+            <ResponsiveImage
+              src={img.src}
+              alt={img.alt}
+              width={imgWidth}
+              height={imgHeight}
+              widths={imageWidths}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchPriority={isHero && i === 0 ? 'high' : undefined}
+              sizes={imageSizes}
+              desktopOnly={desktopOnly}
+              class:list={[
+                isHero && 'hero-embla-slide__img h-full w-full',
+                isHero && fit === 'contain' && 'hero-embla-slide__img--contain',
+                isHero && fit !== 'contain' && 'hero-embla-slide__img--cover',
+              ]}
+            />
+            {!isHero && (img.caption || img.captionDesc) && (
+              <figcaption class="mt-2 px-1 text-sm text-muted-foreground">
+                <strong class="text-foreground">{img.caption}</strong>
+                {img.captionDesc && ` — ${img.captionDesc}`}
+              </figcaption>
+            )}
+          </figure>
+        </CarouselItem>
+      );
+      })}
+    </CarouselContent>
+    {images.length > 1 &&
+      (isHero ? (
+        <>
+          <CarouselPrevious class="hero-slider-arrow hero-slider-arrow--prev" aria-label="Previous image" />
+          <CarouselNext class="hero-slider-arrow hero-slider-arrow--next" aria-label="Next image" />
+        </>
+      ) : (
+        <>
+          <CarouselPrevious class="left-2" />
+          <CarouselNext class="right-2" />
+        </>
+      ))}
+  </CarouselShell>
+  {
+    isHero && heroThumbnails && images.length > 1 && (
+      <div
+        class:list={[
+          'hero-thumb-strip mt-3 grid gap-2',
+          images.length === 3 && 'grid-cols-3',
+          images.length === 4 && 'grid-cols-4',
+          images.length >= 5 && 'grid-cols-5',
+        ]}
+        data-hero-embla-thumbs
+        role="tablist"
+        aria-label="Screenshot thumbnails"
+      >
+        {images.map((img, i) => {
+          const thumbW = img.width && img.height ? Math.round((80 * img.width) / img.height) : 80;
+          return (
+            <button
+              type="button"
+              role="tab"
+              class="hero-thumb-btn overflow-hidden rounded-md border border-border bg-muted/40 p-0.5 transition-[border-color,box-shadow] data-[active=true]:border-primary data-[active=true]:ring-2 data-[active=true]:ring-primary/35"
+              data-hero-embla-thumb={i}
+              aria-label={img.alt}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              data-active={i === 0 ? 'true' : 'false'}
+            >
+              <ResponsiveImage
+                src={img.src}
+                alt=""
+                width={thumbW}
+                height={80}
+                loading="lazy"
+                decoding="async"
+                sizes="80px"
+                class="hero-thumb-btn__img block h-14 w-full object-cover sm:h-16"
+              />
+            </button>
+          );
+        })}
+      </div>
+    )
+  }
+  {
+    isHero && !heroThumbnails && images.length > 1 && (
+      <div
+        class="pointer-events-none absolute inset-x-2 bottom-3 flex justify-center"
+        data-hero-embla-dots
+        role="tablist"
+        aria-label="Hero slides"
+      >
+        <div class="pointer-events-auto flex items-center gap-1.5 rounded-full border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur-sm">
+          {images.map((_, i) => (
+            <button
+              type="button"
+              role="tab"
+              class="hero-embla-dot relative shrink-0 overflow-hidden rounded-full bg-white/30 transition-[width] duration-300"
+              data-hero-embla-dot={i}
+              aria-label={`Slide ${i + 1}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              data-active={i === 0 ? 'true' : 'false'}
+            >
+              <span
+                class="hero-embla-progress pointer-events-none absolute inset-y-0 left-0 rounded-full bg-primary"
+                data-hero-embla-progress
+                aria-hidden="true"
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+</div>
+
+<style is:global>
+  .hero-slider-arrow {
+    display: none !important;
+  }
+
+  @media (min-width: 640px) {
+    .hero-slider-arrow {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 44px !important;
+      height: 44px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 9999px !important;
+      background: rgba(0, 0, 0, 0.55) !important;
+      color: #fff !important;
+      border: 1px solid rgba(255, 255, 255, 0.45) !important;
+      box-shadow: none !important;
+      opacity: 1 !important;
+      z-index: 2;
+    }
+
+    .hero-slider-arrow:hover,
+    .hero-slider-arrow:focus-visible {
+      background: rgba(0, 0, 0, 0.72) !important;
+      color: #fff !important;
+    }
+
+    .hero-slider-arrow svg {
+      width: 20px;
+      height: 20px;
+      color: #fff !important;
+      stroke: currentColor;
+    }
+
+    .hero-slider-arrow--prev {
+      left: 0.5rem !important;
+      right: auto !important;
+    }
+
+    .hero-slider-arrow--next {
+      right: 0.5rem !important;
+      left: auto !important;
+    }
+  }
+</style>

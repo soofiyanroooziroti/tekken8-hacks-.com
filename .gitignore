@@ -1,0 +1,40 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+.env.*
+!.env.example
+node_modules-incomplete/
+*.log
+*.zip
+Gemini_Generated_Image_*.jfif
+/index.html
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# local Cursor exports (do not publish)
+previous cursor chats/
+
+# local image bundles (not for git)
+cheatsisle-images-and-prompt.zip
+cheatsisle-images-and-prompt/
+legacy-clone-images.zip
+_legacy-clone-images-extract/

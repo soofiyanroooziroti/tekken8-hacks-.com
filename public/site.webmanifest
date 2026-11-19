@@ -1,0 +1,33 @@
+{
+  "name": "Tekken 8 Hacks",
+  "short_name": "Tekken 8 Hacks",
+  "description": "Tekken 8 Hacks for Tekken 8 on Windows PC.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0d10",
+  "theme_color": "#7f3dee",
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

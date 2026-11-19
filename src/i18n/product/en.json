@@ -1,0 +1,69 @@
+{
+  "steps": [
+    {
+      "title": "Check status",
+      "desc": "Confirm the loader is current on tekken8hacks.com before you buy—especially after a Tekken 8 patch."
+    },
+    {
+      "title": "Pick a plan",
+      "desc": "Choose monthly or lifetime—$35 for 30 days or $150 lifetime on Tekken 8 Hacks."
+    },
+    {
+      "title": "Secure checkout",
+      "desc": "Complete checkout on the portal. Your license unlocks with instant delivery."
+    },
+    {
+      "title": "Install & verify",
+      "desc": "Follow the setup guide, load a conservative preset, and test in Practice or Warm-up before ranked play."
+    }
+  ],
+  "howToGet": "How to get {name}",
+  "cheats": {
+    "groupNames": [
+      "TEKKEN 8 FEATURES"
+    ],
+    "descs": [
+      "Frame data and timing options for lab and match practice.",
+      "Heat-system overlays and callouts on Windows PC.",
+      "Punish windows and counter-hit cues in training.",
+      "Combo routing helpers for your chosen character.",
+      "Stream-proof overlay so captures stay clean on supported setups."
+    ],
+    "slides": [],
+    "overview": {
+      "title": "Tekken 8 overlay for Windows PC",
+      "paragraphs": [
+        "Tekken 8 overlay and mod options on Windows PC with Frame, Heat, Punish, Combo, and stream-proof overlay.",
+        "Always check tekken8hacks.com before you launch, especially after a Tekken 8 client patch."
+      ]
+    },
+    "body": [
+      {
+        "type": "h2",
+        "text": "Modules included"
+      },
+      {
+        "type": "p",
+        "text": "The package includes Frame, Heat, Punish, Combo, and stream-proof overlay."
+      },
+      {
+        "type": "h2",
+        "text": "Plans"
+      },
+      {
+        "type": "p",
+        "text": "Monthly $35 USD (P30D) or lifetime $150 USD (P99Y). Instant digital delivery worldwide after checkout."
+      }
+    ],
+    "goodToKnow": "Tekken 8 updates often. Confirm availability on tekken8hacks.com before you launch. Overlay behavior may differ in Training or online lobbies after patches.",
+    "limitations": "Third-party software can conflict with game updates. You use this software at your own risk. Compatibility can change after Tekken 8 or Windows updates without notice.",
+    "requirements": [
+      "Windows 10/11",
+      "Intel/AMD",
+      "HVCI ON",
+      "CORE ISOLATION ON",
+      "TPM ON",
+      "SECURE BOOT ON"
+    ]
+  }
+}

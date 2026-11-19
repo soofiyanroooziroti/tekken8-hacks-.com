@@ -1,0 +1,413 @@
+---
+import type { IconName } from './icons/types';
+import Icon from './icons/Icon.astro';
+import SlideRevealButton from './SlideRevealButton.astro';
+import StatusUpdatedPill from './StatusUpdatedPill.astro';
+import { getLocaleFromAstro, getTranslations } from '../i18n';
+import { Badge } from '@/components/starwind/badge';
+import { Button } from '@/components/starwind/button';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/starwind/card';
+import {
+  checkoutUrlWithPlan,
+  formatPlanPrice,
+  getDefaultPlan,
+  getProductPlans,
+} from '../data/productPricing';
+import { countDisplayedCatalogFeatures } from '../utils/catalog-card';
+
+interface Props {
+  label: string;
+  title: string;
+  href: string;
+  buyUrl: string;
+  productSlug: string;
+  features: string[];
+  /** Full module count for "+N more" (defaults to features.length). */
+  featureTotal?: number;
+  more?: number;
+  icon?: IconName;
+  badge?: string;
+  variant?: 'essential' | 'popular' | 'limited';
+  buyLabel?: string;
+  viewLabel?: string;
+  maxFeatures?: number;
+  featured?: boolean;
+  featuredRibbon?: string;
+  buyEmphasis?: boolean;
+  showStatusPill?: boolean;
+  /** Featured cheat: features left, commerce stack right (home only). */
+  featuredSplitLayout?: boolean;
+  /** /products grid: single-column stack (not split). */
+  productsGridStackedLayout?: boolean;
+  class?: string;
+}
+
+const locale = getLocaleFromAstro(Astro);
+const t = getTranslations(locale);
+const pricing = t.pricing as Record<string, string>;
+const catalog = t.catalog as Record<string, string>;
+
+const {
+  label,
+  title,
+  href,
+  buyUrl,
+  productSlug,
+  features,
+  featureTotal,
+  more = 0,
+  icon = 'package',
+  badge,
+  variant,
+  buyLabel = catalog.buyNow ?? 'Buy now',
+  viewLabel = catalog.viewDetails ?? 'View details',
+  maxFeatures = 3,
+  featured = false,
+  featuredRibbon,
+  buyEmphasis = featured,
+  showStatusPill = false,
+  featuredSplitLayout = false,
+  productsGridStackedLayout = false,
+  class: className,
+} = Astro.props;
+
+const displayFeatures = features.slice(0, maxFeatures);
+const countedTotal = featureTotal ?? countDisplayedCatalogFeatures(features);
+const shownFeatureCount = countDisplayedCatalogFeatures(displayFeatures);
+const extraCount = Math.max(0, countedTotal - shownFeatureCount);
+const showCategoryPill = label.trim().toLowerCase() !== title.trim().toLowerCase();
+const plans = getProductPlans(productSlug);
+const defaultPlan = getDefaultPlan(productSlug);
+const buyHref = checkoutUrlWithPlan(buyUrl, defaultPlan.id);
+const monthlyPlan = plans.find((p) => p.id === 'mon');
+const lifetimePlan = plans.find((p) => p.id === 'lifetime');
+const lifetimeSaveUsd =
+  monthlyPlan && lifetimePlan ? monthlyPlan.priceUsd * 12 - lifetimePlan.priceUsd : 0;
+const plansJson = JSON.stringify(
+  plans.map((p) => ({ id: p.id, label: p.label, priceUsd: p.priceUsd, priceNote: p.priceNote })),
+);
+
+const statusBadgeIcon = (text: string): IconName => {
+  if (/limited/i.test(text)) return 'alert';
+  if (/private/i.test(label)) return 'shieldCheck';
+  return 'circleCheck';
+};
+---
+
+<Card
+  class:list={[
+    'catalog-card group relative flex h-full flex-col overflow-visible py-0',
+    featured ? 'catalog-card--featured' : 'catalog-card--secondary',
+    className,
+  ]}
+  data-catalog-card
+  data-buy-url={buyUrl}
+  data-plans={plansJson}
+>
+  {
+    featured && (
+      <div class="catalog-card__ribbon" aria-hidden="true">
+        <span>{featuredRibbon ?? pricing.recommended ?? catalog.recommended ?? 'Recommended'}</span>
+      </div>
+    )
+  }
+
+  <CardHeader class="catalog-card__header space-y-1.5 pb-1 pt-3">
+    <CardTitle
+      class:list={[
+        'catalog-card__title flex flex-wrap items-center gap-2 text-base normal-case leading-snug md:text-lg',
+        featured && 'catalog-card__title--featured',
+      ]}
+    >
+      <a href={href} class="hover:text-primary">{title}</a>
+    </CardTitle>
+    <div class="catalog-card__badges flex flex-wrap items-center gap-1">
+      {
+        showCategoryPill && (
+          <Badge tone="primary" appearance="outline" size="sm" class="catalog-card__badge gap-1">
+            <Icon name={icon} size={12} class="shrink-0" />
+            {label}
+          </Badge>
+        )
+      }
+      {
+        badge && !featuredSplitLayout && (
+          <Badge
+            tone={/limited/i.test(badge) ? 'warning' : 'success'}
+            appearance="soft"
+            size="sm"
+            class="catalog-card__badge gap-1"
+          >
+            <Icon name={statusBadgeIcon(badge)} size={12} class="shrink-0" />
+            {badge}
+          </Badge>
+        )
+      }
+      {variant === 'popular' && !featured && (
+        <Badge tone="primary" appearance="solid" size="sm" class="catalog-card__badge gap-1">
+          <Icon name="zap" size={12} class="shrink-0" />
+          {catalog.popular ?? 'Popular'}
+        </Badge>
+      )}
+    </div>
+  </CardHeader>
+
+  <CardContent
+    class:list={[
+      'flex flex-1 flex-col gap-2.5 px-4 pt-0',
+      featuredSplitLayout ? 'catalog-card__content--featured-split pb-0' : 'pb-2',
+    ]}
+  >
+    {
+      featuredSplitLayout ? (
+        <>
+          <div class="catalog-card__split">
+            <ul class="catalog-card__features text-sm text-muted-foreground">
+              {displayFeatures.map((feature) => (
+                <li class="flex items-start gap-2">
+                  <Icon name="check" size={14} class="mt-0.5 shrink-0 text-primary" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+              {extraCount > 0 && (
+                <li class="catalog-card__features-more text-xs font-medium text-muted-foreground/90">
+                  {(catalog.plusMore ?? '+{count} more').replace('{count}', String(extraCount))}
+                </li>
+              )}
+            </ul>
+
+            <div class="catalog-card__commerce catalog-card__commerce--split">
+              <p class="catalog-card__price-line catalog-card__price-line--featured" data-catalog-price-line>
+                {formatPlanPrice(defaultPlan.priceUsd)}
+                {defaultPlan.id === 'mon'
+                  ? (pricing.monthlySuffix ?? catalog.monthlySuffix ?? ' monthly')
+                  : (pricing.lifetimeSuffix ?? catalog.lifetimeSuffix ?? ' lifetime')}
+              </p>
+
+              <div
+                class="catalog-card__plan-toggle"
+                role="group"
+                aria-label={catalog.selectPlanAria ?? pricing.selectPlanAria ?? 'Select plan length'}
+              >
+                {
+                  plans.map((plan) => (
+                    <button
+                      type="button"
+                      class:list={['catalog-card__plan-btn', plan.id === defaultPlan.id && 'is-active']}
+                      data-catalog-plan={plan.id}
+                      aria-pressed={plan.id === defaultPlan.id ? 'true' : 'false'}
+                    >
+                      <span>{plan.id === 'mon' ? (pricing.oneMonth ?? '1 Month') : (pricing.lifetime ?? 'Lifetime')}</span>
+                      {lifetimeSaveUsd > 0 && (
+                        <span
+                          class:list={['catalog-card__save', plan.id === 'mon' && 'catalog-card__save--reserve']}
+                          aria-hidden={plan.id === 'mon' ? 'true' : undefined}
+                        >
+                          {(pricing.saveAmount ?? catalog.saveAmount ?? 'Save ${amount}').replace(
+                            '{amount}',
+                            String(lifetimeSaveUsd),
+                          )}
+                        </span>
+                      )}
+                    </button>
+                  ))
+                }
+              </div>
+
+              {showStatusPill && <StatusUpdatedPill class="catalog-card__status-pill" />}
+            </div>
+          </div>
+
+          <div class="catalog-card__buy-wrap">
+            <SlideRevealButton
+              href={buyHref}
+              block
+              class="catalog-card__buy catalog-card__buy--featured catalog-card__buy--split slide-reveal-btn slide-reveal-btn--emphasis rounded-lg"
+            >
+              {buyLabel}
+            </SlideRevealButton>
+          </div>
+        </>
+      ) : productsGridStackedLayout ? (
+        <>
+          <ul class="catalog-card__features space-y-1.5 text-sm text-muted-foreground">
+            {displayFeatures.map((feature) => (
+              <li class="flex items-start gap-2">
+                <Icon name="check" size={14} class="mt-0.5 shrink-0 text-primary" />
+                <span>{feature}</span>
+              </li>
+            ))}
+            {extraCount > 0 && (
+              <li class="text-xs font-medium text-muted-foreground/90">
+                {(catalog.plusMore ?? '+{count} more').replace('{count}', String(extraCount))}
+              </li>
+            )}
+          </ul>
+
+          <div class="catalog-card__commerce catalog-card__commerce--grid mt-auto">
+            <p
+              class="catalog-card__price-line catalog-card__price-line--featured catalog-card__price-line--nowrap"
+              data-catalog-price-line
+            >
+              {formatPlanPrice(defaultPlan.priceUsd)}
+              {defaultPlan.id === 'mon'
+                ? (pricing.monthlySuffix ?? catalog.monthlySuffix ?? ' monthly')
+                : (pricing.lifetimeSuffix ?? catalog.lifetimeSuffix ?? ' lifetime')}
+            </p>
+
+            {showStatusPill && <StatusUpdatedPill class="catalog-card__status-pill" />}
+
+            <div
+              class="catalog-card__plan-toggle catalog-card__plan-toggle--full"
+              role="group"
+              aria-label={catalog.selectPlanAria ?? pricing.selectPlanAria ?? 'Select plan length'}
+            >
+              {
+                plans.map((plan) => (
+                  <button
+                    type="button"
+                    class:list={['catalog-card__plan-btn', plan.id === defaultPlan.id && 'is-active']}
+                    data-catalog-plan={plan.id}
+                    aria-pressed={plan.id === defaultPlan.id ? 'true' : 'false'}
+                  >
+                    <span>{plan.id === 'mon' ? (pricing.oneMonth ?? '1 Month') : (pricing.lifetime ?? 'Lifetime')}</span>
+                    {lifetimeSaveUsd > 0 && (
+                      <span
+                        class:list={['catalog-card__save', plan.id === 'mon' && 'catalog-card__save--reserve']}
+                        aria-hidden={plan.id === 'mon' ? 'true' : undefined}
+                      >
+                        {(pricing.saveAmount ?? catalog.saveAmount ?? 'Save ${amount}').replace(
+                          '{amount}',
+                          String(lifetimeSaveUsd),
+                        )}
+                      </span>
+                    )}
+                  </button>
+                ))
+              }
+            </div>
+
+            <SlideRevealButton
+              href={buyHref}
+              block
+              class="catalog-card__buy catalog-card__buy--featured slide-reveal-btn slide-reveal-btn--emphasis rounded-lg"
+            >
+              {buyLabel}
+            </SlideRevealButton>
+          </div>
+        </>
+      ) : (
+        <>
+          <ul class="catalog-card__features space-y-1.5 text-sm text-muted-foreground">
+            {displayFeatures.map((feature) => (
+              <li class="flex items-start gap-2">
+                <Icon name="check" size={14} class="mt-0.5 shrink-0 text-primary" />
+                <span>{feature}</span>
+              </li>
+            ))}
+            {extraCount > 0 && (
+              <li class="text-xs font-medium text-muted-foreground/90">
+                {(catalog.plusMore ?? '+{count} more').replace('{count}', String(extraCount))}
+              </li>
+            )}
+          </ul>
+
+          <div class="catalog-card__commerce mt-auto">
+            <p
+              class:list={['catalog-card__price-line', featured && 'catalog-card__price-line--featured']}
+              data-catalog-price-line
+            >
+              {formatPlanPrice(defaultPlan.priceUsd)}
+              {defaultPlan.id === 'mon'
+                ? (pricing.monthlySuffix ?? catalog.monthlySuffix ?? ' monthly')
+                : (pricing.lifetimeSuffix ?? catalog.lifetimeSuffix ?? ' lifetime')}
+            </p>
+
+            <div
+              class="catalog-card__plan-toggle"
+              role="group"
+              aria-label={catalog.selectPlanAria ?? pricing.selectPlanAria ?? 'Select plan length'}
+            >
+              {
+                plans.map((plan) => (
+                  <button
+                    type="button"
+                    class:list={['catalog-card__plan-btn', plan.id === defaultPlan.id && 'is-active']}
+                    data-catalog-plan={plan.id}
+                    aria-pressed={plan.id === defaultPlan.id ? 'true' : 'false'}
+                  >
+                    <span>{plan.id === 'mon' ? (pricing.oneMonth ?? '1 Month') : (pricing.lifetime ?? 'Lifetime')}</span>
+                    {lifetimeSaveUsd > 0 && (
+                      <span
+                        class:list={[
+                          'catalog-card__save',
+                          plan.id === 'mon' && 'catalog-card__save--reserve',
+                        ]}
+                        aria-hidden={plan.id === 'mon' ? 'true' : undefined}
+                      >
+                        {(pricing.saveAmount ?? catalog.saveAmount ?? 'Save ${amount}').replace(
+                          '{amount}',
+                          String(lifetimeSaveUsd),
+                        )}
+                      </span>
+                    )}
+                  </button>
+                ))
+              }
+            </div>
+
+            <div class:list={['catalog-card__buy-row', showStatusPill && 'catalog-card__buy-row--pill']}>
+              {showStatusPill && <StatusUpdatedPill class="catalog-card__status-pill" />}
+              {
+                buyEmphasis ? (
+                  <SlideRevealButton
+                    href={buyHref}
+                    block
+                    class:list={[
+                      'catalog-card__buy slide-reveal-btn rounded-lg slide-reveal-btn--emphasis',
+                      (featured || buyEmphasis) && 'catalog-card__buy--featured',
+                      showStatusPill && 'catalog-card__buy--with-pill',
+                    ]}
+                  >
+                    {buyLabel}
+                  </SlideRevealButton>
+                ) : (
+                  <Button
+                    as="a"
+                    href={buyHref}
+                    variant="secondary"
+                    size="sm"
+                    class="catalog-card__buy h-9 w-full justify-center rounded-lg text-sm font-semibold"
+                    data-catalog-buy
+                  >
+                    {buyLabel}
+                  </Button>
+                )
+              }
+            </div>
+          </div>
+        </>
+      )
+    }
+  </CardContent>
+
+  <CardFooter
+    class:list={[
+      'catalog-card__footer border-border/60 bg-muted/10 px-4 pb-3',
+      featuredSplitLayout
+        ? 'catalog-card__footer--featured-split border-t-0 bg-transparent pt-0'
+        : 'border-t pt-2',
+    ]}
+  >
+    <Button as="a" href={href} variant="outline" size="sm" class="h-8 w-full justify-center text-xs">
+      {viewLabel}
+      <Icon name="eye" size={14} />
+    </Button>
+  </CardFooter>
+</Card>

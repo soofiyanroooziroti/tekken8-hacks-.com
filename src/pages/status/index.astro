@@ -1,0 +1,187 @@
+---
+import { getLocaleFromAstro, getTranslations } from '../../i18n';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { resolvePageSeo } from '../../config/seo';
+import { checkoutPath } from '../../config/checkout';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import SlideRevealButton from '../../components/SlideRevealButton.astro';
+import StatusUpdatedPill from '../../components/StatusUpdatedPill.astro';
+import {
+  STATUS_GAME_BUILD,
+  STATUS_GAME_BUILD_RELEASE,
+  STATUS_GAME_PATCHES,
+  STATUS_LEGEND,
+  STATUS_REQUIREMENTS,
+  getStatusCheatUpdates,
+} from '../../data/status';
+import { breadcrumbSchema, webPageSchema } from '../../utils/schema';
+const locale = getLocaleFromAstro(Astro);
+const t = getTranslations(locale);
+const seo = resolvePageSeo('/status/');
+const sp = t.statusPage as {
+  h1: string;
+  intro: string;
+  buildTitle: string;
+  requirementsTitle: string;
+  patchesTitle: string;
+  patchesSource: string;
+  cheatUpdatesTitle: string;
+  cheatUpdatesEmpty: string;
+  buyLabel: string;
+};
+const breadcrumbs = [
+  { name: t.breadcrumbs.home, path: '/' },
+  { name: t.status.breadcrumb, path: '/status/' },
+];
+const cheatUpdates = getStatusCheatUpdates();
+const buyHref = checkoutPath('tekkenHack');
+---
+
+<BaseLayout
+  title={seo.title}
+  description={seo.description}
+  jsonLd={[
+    webPageSchema({
+      name: seo.title,
+      description: seo.description,
+      url: '/status/',
+    }),
+    breadcrumbSchema(breadcrumbs),
+  ]}
+>
+  <section class="status-page border-b border-border bg-muted/10 py-8 md:py-12">
+    <div class="mx-auto max-w-3xl px-5">
+      <Breadcrumbs items={breadcrumbs} />
+
+      <header class="mt-8 space-y-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tekken 8 Hacks</p>
+        <h1 id="status-page-title" class="text-3xl font-bold md:text-4xl">{sp.h1}</h1>
+        <p class="text-base leading-relaxed text-muted-foreground">{sp.intro}</p>
+        <StatusUpdatedPill link={false} size="lg" />
+      </header>
+
+      <ul class="status-legend status-page__legend" role="list">
+        {
+          STATUS_LEGEND.map((item) => (
+            <li class="status-legend__item">
+              <span class:list={['status-legend__dot', `status-legend__dot--${item.tone}`]} aria-hidden="true" />
+              <span>
+                <strong>{item.label}.</strong> {item.meaning}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <section class="mt-12" aria-labelledby="status-build-title">
+        <h2 id="status-build-title" class="text-lg font-semibold">{sp.buildTitle}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <strong class="text-foreground">{STATUS_GAME_BUILD}</strong> ({STATUS_GAME_BUILD_RELEASE})
+        </p>
+      </section>
+
+      <section class="mt-10" aria-labelledby="status-req-title">
+        <h2 id="status-req-title" class="text-lg font-semibold">{sp.requirementsTitle}</h2>
+        <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+          {STATUS_REQUIREMENTS.map((line) => <li>{line}</li>)}
+        </ul>
+      </section>
+
+      <section class="mt-10" aria-labelledby="status-patches-title">
+        <h2 id="status-patches-title" class="text-lg font-semibold">{sp.patchesTitle}</h2>
+        <ol class="status-notes mt-4" role="list">
+          {
+            STATUS_GAME_PATCHES.map((entry) => (
+              <li>
+                <p class="text-sm font-semibold text-foreground">
+                  {entry.build}
+                  <span class="font-normal text-muted-foreground"> · {entry.when}</span>
+                </p>
+                <p class="mt-1 text-sm leading-relaxed text-muted-foreground">{entry.summary}</p>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="mt-3 text-xs text-muted-foreground">{sp.patchesSource}</p>
+      </section>
+
+      <section class="mt-10" aria-labelledby="status-cheat-updates-title">
+        <h2 id="status-cheat-updates-title" class="text-lg font-semibold">{sp.cheatUpdatesTitle}</h2>
+        <ol class="status-notes mt-4" role="list">
+          {
+            cheatUpdates.map((entry) => (
+              <li>
+                <p class="text-sm font-semibold text-foreground">{entry.when}</p>
+                <p class="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  {entry.summary}
+                  {entry.todo ? '' : null}
+                </p>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <div class="mt-10">
+        <SlideRevealButton href={buyHref} class="slide-reveal-btn--block max-w-md">
+          {sp.buyLabel}
+        </SlideRevealButton>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .status-page__legend {
+    margin-top: 1.125rem;
+  }
+
+  .status-legend {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .status-legend__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .status-legend__dot {
+    width: 0.85rem;
+    height: 0.85rem;
+    margin-top: 0.28rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+  }
+
+  .status-legend__dot--green {
+    background: #22c55e;
+  }
+
+  .status-legend__dot--red {
+    background: #ef4444;
+  }
+
+  .status-legend__dot--blue {
+    background: #3b82f6;
+  }
+
+  .status-notes {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .status-notes li {
+    border-left: 2px solid color-mix(in oklch, var(--primary) 40%, transparent);
+    padding-left: 0.9rem;
+  }
+</style>

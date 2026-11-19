@@ -1,0 +1,68 @@
+export interface PageSeoEntry {
+  title: string;
+  description: string;
+}
+
+export const PAGE_SEO: Record<string, PageSeoEntry> = {
+  '/': {
+    title: 'Tekken 8 Hacks for Windows PC | Best Tekken 8 Hacks',
+    description:
+      'Tekken 8 hacks for Windows PC with Frame, Heat, Punish, Combo and stream-proof overlay. Monthly and lifetime plans on tekken8hacks.com.',
+  },
+  '/product/tekken-8-hack/': {
+    title: 'Tekken 8 Overlay for Windows PC | Tekken 8 Mod Plans',
+    description:
+      'Tekken 8 overlay and mod options on Windows PC. Review Frame, Heat, Punish, Combo and stream-proof overlay with monthly and lifetime checkout.',
+  },
+  '/blog/': {
+    title: 'Tekken 8 Guides and Patch Notes | Windows PC Setup',
+    description:
+      'Tekken 8 guides for Windows PC setup, feature tuning and patch-day checks. Browse published articles on tekken8hacks.com before you launch.',
+  },
+  '/forum/': {
+    title: 'Tekken 8 Hacks Forum | Feature Questions and Guides',
+    description:
+      'Example Tekken 8 discussions about Frame, Heat, Punish, Combo and stream-proof overlay on Windows PC.',
+  },
+  '/faq/': {
+    title: 'Tekken 8 Hacks FAQ | Plans and Windows Setup',
+    description:
+      'FAQ for Tekken 8 Hacks: Windows PC requirements, Frame and Heat options, checkout, and license plans on tekken8hacks.com.',
+  },
+  '/support/': {
+    title: 'Tekken 8 Hacks Support | Checkout and Windows PC Help',
+    description:
+      'Tekken 8 Hacks support through Discord. Include your order ID, Windows version and loader message for checkout and setup questions.',
+  },
+  '/about/': {
+    title: 'About Tekken 8 Hacks Store | Windows PC Product',
+    description:
+      'About Tekken 8 Hacks: one Windows PC loader, checkout plans, digital delivery and Discord support on tekken8hacks.com before you buy.',
+  },
+  '/privacy/': {
+    title: 'Privacy Policy | Tekken 8 Hacks',
+    description:
+      'How Tekken 8 Hacks handles analytics, cookies and contact data when you use tekken8hacks.com.',
+  },
+  '/terms/': {
+    title: 'Terms of Use | Tekken 8 Hacks',
+    description:
+      'License terms, acceptable use, checkout delivery and refund conditions for Tekken 8 Hacks on Windows PC.',
+  },
+  '/status/': {
+    title: 'Tekken 8 Hacks Status | Loader and Patch Notes',
+    description:
+      'Check Tekken 8 loader status and recent Tekken 8 patch notes before you launch on Windows PC.',
+  },
+};
+
+export function normalizeSeoPath(pathname: string): string {
+  let path = pathname || '/';
+  if (!path.startsWith('/')) path = `/${path}`;
+  if (path !== '/' && !path.endsWith('/')) path = `${path}/`;
+  return path;
+}
+
+export function getPageSeoEntry(pathname: string): PageSeoEntry | undefined {
+  return PAGE_SEO[normalizeSeoPath(pathname)];
+}

@@ -1,0 +1,129 @@
+---
+import type { ProductSlide } from '../data/products';
+import ResponsiveImage from './ResponsiveImage.astro';
+import { HERO_IMAGE_SIZES } from '../utils/responsiveImage';
+
+interface Props {
+  images: ProductSlide[];
+  id: string;
+  sizes?: string;
+}
+
+const { images, id, sizes = HERO_IMAGE_SIZES } = Astro.props;
+const first = images[0];
+if (!first) return null;
+
+const payload = images.map((img) => ({
+  src: img.src,
+  alt: img.alt,
+  width: img.width ?? 1280,
+  height: img.height ?? 720,
+}));
+---
+
+<div
+  class="menu-thumb-gallery relative w-full rounded-xl border border-border bg-card p-2 shadow-sm"
+  id={id}
+  data-menu-thumb-gallery
+  data-slides={JSON.stringify(payload)}
+>
+  <figure
+    class="menu-thumb-gallery__main overflow-hidden rounded-lg bg-muted/30"
+    style={first.width && first.height ? `aspect-ratio: ${first.width} / ${first.height}` : undefined}
+  >
+    <ResponsiveImage
+      src={first.src}
+      alt={first.alt}
+      width={first.width ?? 1280}
+      height={first.height ?? 720}
+      sizes={sizes}
+      loading="eager"
+      fetchPriority="high"
+      class="menu-thumb-gallery__main-img h-full w-full object-contain"
+
+    />
+  </figure>
+
+  {
+    images.length > 1 && (
+      <ul
+        class="menu-thumb-gallery__thumbs mt-2 flex list-none gap-2 overflow-x-auto p-0.5"
+        role="tablist"
+        aria-label="Screenshot thumbnails"
+      >
+        {images.map((img, i) => (
+          <li class="shrink-0">
+            <button
+              type="button"
+              role="tab"
+              class:list={[
+                'menu-thumb-gallery__thumb overflow-hidden rounded-md border-2 transition-colors',
+                i === 0 ? 'border-primary' : 'border-transparent opacity-80 hover:opacity-100',
+              ]}
+              data-menu-thumb-btn={i}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-label={`Show image ${i + 1}: ${img.alt}`}
+            >
+              <img
+                src={img.src}
+                alt=""
+                width={120}
+                height={Math.round(120 * ((img.height ?? 720) / (img.width ?? 1280)))}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                class="block h-14 w-[4.5rem] object-cover object-center sm:h-16 sm:w-24"
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</div>
+
+<script>
+  const initMenuThumbGalleries = () => {
+    document.querySelectorAll<HTMLElement>('[data-menu-thumb-gallery]').forEach((root) => {
+      if (root.dataset.menuThumbBound === 'true') return;
+      root.dataset.menuThumbBound = 'true';
+
+      let slides: { src: string; alt: string; width: number; height: number }[] = [];
+      try {
+        slides = JSON.parse(root.dataset.slides ?? '[]');
+      } catch {
+        return;
+      }
+      const main = root.querySelector<HTMLImageElement>('.menu-thumb-gallery__main-img');
+      const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-menu-thumb-btn]')];
+      if (!main || slides.length < 2) return;
+
+      const setActive = (index: number) => {
+        const slide = slides[index];
+        if (!slide) return;
+        main.src = slide.src;
+        main.alt = slide.alt;
+        main.width = slide.width;
+        main.height = slide.height;
+        buttons.forEach((btn, i) => {
+          const on = i === index;
+          btn.setAttribute('aria-selected', on ? 'true' : 'false');
+          btn.classList.toggle('border-primary', on);
+          btn.classList.toggle('border-transparent', !on);
+          btn.classList.toggle('opacity-80', !on);
+        });
+      };
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const index = Number(btn.getAttribute('data-menu-thumb-btn'));
+          if (Number.isNaN(index)) return;
+          setActive(index);
+        });
+      });
+    });
+  };
+
+  initMenuThumbGalleries();
+  document.addEventListener('astro:page-load', initMenuThumbGalleries);
+  document.addEventListener('astro:after-swap', initMenuThumbGalleries);
+</script>
